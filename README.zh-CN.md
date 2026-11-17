@@ -19,27 +19,6 @@
 
 我是 **Yuuki**，目前在 **郑州大学（ZZU）** 攻读硕士研究生学位，关注 **多模态人工智能（Multimodal AI）** 科研与 **后端 / AI 基础设施工程**。比起停留在概念层面，我更倾向于把想法落地成可复现、可验证、可观测的真实系统——既写面向生产的后端服务与 Agent 架构，也深入异构 GPU 算子与推理优化。
 
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <h4>科研方向 · 多模态 AI</h4>
-      <ul>
-        <li><strong>研究兴趣：</strong>多模态表征学习与多模态生成模型推理加速</li>
-        <li><strong>算子与编译：</strong>基于 <code>NineToothed</code>、<code>Triton/HIP</code>、<code>InfiniCore</code> 与 <code>InfiniLM</code> 进行算子融合及 AOT 编译接入</li>
-        <li><strong>工程复现：</strong>海光多卡（gfx936 / gfx906）视频生成推理部署与数值 / 性能基准测试</li>
-      </ul>
-    </td>
-    <td width="50%" valign="top">
-      <h4>工程方向 · 后端开发与 AI Infra</h4>
-      <ul>
-        <li><strong>后端主力栈：</strong><code>Java</code>（<code>Spring Boot 3</code>、<code>WebFlux</code>、<code>Spring AI</code>）与 <code>Python</code>（<code>FastAPI</code>、<code>LangGraph</code>）</li>
-        <li><strong>AI 应用工程：</strong>混合检索 RAG（<code>BM25 + 向量 + RRF</code>）、状态化 Agent 编排与断线可恢复 SSE 流式输出</li>
-        <li><strong>数据与部署：</strong><code>PostgreSQL</code>、<code>Redis</code>、<code>OpenSearch</code>、<code>Chroma</code> 及 Docker 容器化交付</li>
-      </ul>
-    </td>
-  </tr>
-</table>
-
 ---
 
 ### 技术栈

@@ -19,27 +19,6 @@
 
 I am **Yuuki**, an M.S. student at **Zhengzhou University (ZZU)** working across **Multimodal AI Research** and **Backend / AI Systems Engineering**. I enjoy turning messy real-world problems into grounded architectures—whether that means optimizing multimodal inference kernels on heterogeneous GPUs or shipping traceable backend services and LLM agent pipelines.
 
-<table>
-  <tr>
-    <td width="50%" valign="top">
-      <h4>Research Track · Multimodal AI</h4>
-      <ul>
-        <li><strong>Focus:</strong> Multimodal representation learning &amp; generative model inference</li>
-        <li><strong>Systems &amp; Kernels:</strong> Custom operator fusion and AOT compilation (<code>NineToothed</code>, <code>Triton/HIP</code>, <code>InfiniCore</code>, <code>InfiniLM</code>)</li>
-        <li><strong>Practice:</strong> Multi-GPU video generation deployment &amp; numerical/latency benchmarking on Hygon accelerators</li>
-      </ul>
-    </td>
-    <td width="50%" valign="top">
-      <h4>Engineering Track · Backend &amp; AI Infra</h4>
-      <ul>
-        <li><strong>Backend Stack:</strong> Production-oriented services in <code>Java</code> (<code>Spring Boot 3</code>, <code>WebFlux</code>, <code>Spring AI</code>) and <code>Python</code> (<code>FastAPI</code>, <code>LangGraph</code>)</li>
-        <li><strong>AI Engineering:</strong> Hybrid RAG (<code>BM25 + Vector + RRF</code>), stateful agent orchestration, and resilient SSE streaming</li>
-        <li><strong>Data &amp; Infra:</strong> <code>PostgreSQL</code>, <code>Redis</code>, <code>OpenSearch</code>, <code>Chroma</code>, and containerized workflows</li>
-      </ul>
-    </td>
-  </tr>
-</table>
-
 ---
 
 ### Tech Stack
