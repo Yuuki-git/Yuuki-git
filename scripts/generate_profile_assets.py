@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate minimalist dark/light GitHub telemetry SVG strips for Yuuki-git."""
+"""Generate dark/light GitHub telemetry SVG cards for Yuuki-git's profile README."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ import html
 import json
 import os
 import re
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -37,26 +38,34 @@ LANG_COLORS: dict[str, str] = {
 
 THEMES: dict[str, dict[str, Any]] = {
     "dark": {
-        "bg": "#0d1117",
-        "surface": "#161b22",
-        "border": "#21262d",
+        "bg_start": "#0d1117",
+        "bg_end": "#111823",
+        "card_bg": "#161b22",
+        "tile_bg": "#0d1117",
+        "border": "#30363d",
         "text_primary": "#f0f6fc",
-        "text_secondary": "#9198a1",
-        "text_muted": "#6e7681",
-        "accent": "#e3b341",
-        "heatmap": ["#161b22", "#3b2f13", "#6e5619", "#a88323", "#e3b341"],
+        "text_secondary": "#c9d1d9",
+        "text_muted": "#8b949e",
+        "accent": "#58a6ff",
+        "accent_green": "#3fb950",
+        "accent_purple": "#d2a8ff",
+        "heatmap": ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
         "heatmap_stroke": "#21262d",
     },
     "light": {
-        "bg": "#ffffff",
-        "surface": "#f6f8fa",
-        "border": "#e5e7eb",
-        "text_primary": "#111827",
-        "text_secondary": "#4b5563",
-        "text_muted": "#6b7280",
-        "accent": "#9a6700",
-        "heatmap": ["#f3f4f6", "#fde68a", "#f59e0b", "#d97706", "#9a6700"],
-        "heatmap_stroke": "#e5e7eb",
+        "bg_start": "#ffffff",
+        "bg_end": "#f6f8fa",
+        "card_bg": "#f6f8fa",
+        "tile_bg": "#ffffff",
+        "border": "#d0d7de",
+        "text_primary": "#1f2328",
+        "text_secondary": "#24292f",
+        "text_muted": "#57606a",
+        "accent": "#0969da",
+        "accent_green": "#1a7f37",
+        "accent_purple": "#8250df",
+        "heatmap": ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
+        "heatmap_stroke": "#d8dee4",
     },
 }
 
@@ -68,7 +77,7 @@ def http_request(
     body: dict[str, Any] | None = None,
 ) -> str:
     headers = {
-        "User-Agent": "Yuuki-git-profile-generator/2.0",
+        "User-Agent": "Yuuki-git-profile-generator/1.0",
         "Accept": accept,
     }
     token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
@@ -136,6 +145,9 @@ def fetch_via_graphql(username: str) -> dict[str, Any]:
         ) {
           nodes {
             name
+            pushedAt
+            stargazerCount
+            primaryLanguage { name }
             languages(first: 15, orderBy: {field: SIZE, direction: DESC}) {
               edges {
                 size
@@ -176,10 +188,19 @@ def fetch_via_graphql(username: str) -> dict[str, Any]:
         "username": username,
         "public_repos": int(user["allPublic"]["totalCount"]),
         "owned_repos_count": len(owned_nodes),
+        "total_stars": sum(int(r.get("stargazerCount", 0)) for r in owned_nodes),
         "created_year": int(user["createdAt"][:4]),
         "total_contribs": total_contribs,
         "grid": grid,
         "lang_totals": lang_totals,
+        "recent_repos": [
+            {
+                "name": r["name"],
+                "language": (r.get("primaryLanguage") or {}).get("name") or "Code",
+                "updated": (r.get("pushedAt") or "")[:7],
+            }
+            for r in active_owned[:3]
+        ],
         "generated_date": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d"),
     }
 
@@ -206,14 +227,29 @@ def fetch_via_rest(username: str) -> dict[str, Any]:
             lang_totals[lang] = lang_totals.get(lang, 0) + int(size)
 
     total_contribs, grid = fetch_contributions(username)
+    recent_repos = sorted(
+        active_owned,
+        key=lambda r: r.get("pushed_at") or r.get("updated_at") or "",
+        reverse=True,
+    )[:3]
+
     return {
         "username": username,
         "public_repos": int(user.get("public_repos", len(repos))),
         "owned_repos_count": len(owned_repos),
+        "total_stars": sum(int(r.get("stargazers_count", 0)) for r in owned_repos),
         "created_year": int(user["created_at"][:4]) if user.get("created_at") else 2020,
         "total_contribs": total_contribs,
         "grid": grid,
         "lang_totals": lang_totals,
+        "recent_repos": [
+            {
+                "name": r["name"],
+                "language": r.get("language") or "Code",
+                "updated": (r.get("pushed_at") or r.get("updated_at") or "")[:7],
+            }
+            for r in recent_repos
+        ],
         "generated_date": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d"),
     }
 
@@ -262,110 +298,140 @@ def render_svg(data: dict[str, Any], theme_name: str) -> str:
     langs = prepare_languages(data["lang_totals"], max_items=5)
     uid = theme_name
 
-    # Compact KPI row (left side: x=24..456)
     kpis = [
-        (str(data["public_repos"]), "repos"),
-        (str(data["owned_repos_count"]), "original"),
-        (str(data["total_contribs"]), "contribs / 1y"),
-        (str(data["created_year"]), "since"),
+        ("Public Repos", str(data["public_repos"]), t["accent"]),
+        ("Original", str(data["owned_repos_count"]), t["accent_green"]),
+        ("1Y Contribs", str(data["total_contribs"]), t["accent_purple"]),
+        ("Since", str(data["created_year"]), t["text_primary"]),
     ]
     kpi_svg: list[str] = []
-    for idx, (val, label) in enumerate(kpis):
-        kx = 24 + idx * 108
+    for idx, (label, val, val_color) in enumerate(kpis):
+        x = 36 + idx * 104
         kpi_svg.append(
-            f'<text x="{kx}" y="60" fill="{t["text_primary"]}" font-family="\'Consolas\',\'SFMono-Regular\',monospace" font-size="16" font-weight="700">{html.escape(val)}</text>'
-            f'<text x="{kx}" y="74" fill="{t["text_muted"]}" font-family="\'Segoe UI\',-apple-system,sans-serif" font-size="10">{html.escape(label)}</text>'
+            f'<rect x="{x}" y="62" width="96" height="54" rx="8" fill="{t["tile_bg"]}" stroke="{t["border"]}" stroke-width="1"/>'
+            f'<text x="{x + 12}" y="82" fill="{t["text_muted"]}" font-family="\'Segoe UI\',-apple-system,sans-serif" font-size="10.5">{html.escape(label)}</text>'
+            f'<text x="{x + 12}" y="105" fill="{val_color}" font-family="\'Consolas\',\'SFMono-Regular\',monospace" font-size="17" font-weight="700">{html.escape(val)}</text>'
         )
 
-    # Compact 51-week heatmap (x=24..328, y=88..121; cell 4px, pitch 6px/5px)
     heatmap_svg: list[str] = []
     for w_idx, col in enumerate(data["grid"]):
-        cx = 24 + w_idx * 6
+        cx = 36 + w_idx * 8
         for d_idx, level in enumerate(col):
             if level is None:
                 continue
-            cy = 86 + d_idx * 5
+            cy = 152 + d_idx * 8
             lvl = max(0, min(4, level))
             fill = t["heatmap"][lvl]
-            stroke_attr = f' stroke="{t["heatmap_stroke"]}" stroke-width="0.4"' if lvl == 0 else ""
+            stroke_attr = f' stroke="{t["heatmap_stroke"]}" stroke-width="0.5"' if lvl == 0 else ""
             heatmap_svg.append(
-                f'<rect x="{cx}" y="{cy}" width="4" height="4" rx="1" fill="{fill}"{stroke_attr}/>'
+                f'<rect x="{cx}" y="{cy}" width="6" height="6" rx="1.4" fill="{fill}"{stroke_attr}/>'
             )
 
     legend_svg: list[str] = []
     for lvl in range(5):
-        lx = 398 + lvl * 6
-        stroke_attr = f' stroke="{t["heatmap_stroke"]}" stroke-width="0.4"' if lvl == 0 else ""
+        lx = 374 + lvl * 8
+        stroke_attr = f' stroke="{t["heatmap_stroke"]}" stroke-width="0.5"' if lvl == 0 else ""
         legend_svg.append(
-            f'<rect x="{lx}" y="114" width="4" height="4" rx="1" fill="{t["heatmap"][lvl]}"{stroke_attr}/>'
+            f'<rect x="{lx}" y="222" width="6" height="6" rx="1.4" fill="{t["heatmap"][lvl]}"{stroke_attr}/>'
         )
 
-    # Stacked language bar (right side: x=508..856, width=348)
-    bar_width = 348.0
+    bar_width = 346.0
     bar_segments: list[str] = []
-    cur_x = 508.0
+    cur_x = 496.0
     for idx, lang in enumerate(langs):
         seg_w = bar_width * (lang["pct"] / 100.0)
         if idx == len(langs) - 1:
-            seg_w = max(0.0, 508.0 + bar_width - cur_x)
+            seg_w = max(0.0, 496.0 + bar_width - cur_x)
         if seg_w > 0.3:
             bar_segments.append(
-                f'<rect x="{cur_x:.2f}" y="50" width="{seg_w:.2f}" height="7" fill="{lang["color"]}"/>'
+                f'<rect x="{cur_x:.2f}" y="64" width="{seg_w:.2f}" height="10" fill="{lang["color"]}"/>'
             )
             cur_x += seg_w
 
-    # 2x3 compact language breakdown
     lang_items_svg: list[str] = []
     for idx, lang in enumerate(langs[:6]):
         col = idx % 2
         row = idx // 2
-        lx = 508 + col * 188
-        ly = 78 + row * 19
+        lx = 496 + col * 188
+        ly = 96 + row * 20
         lang_items_svg.append(
-            f'<circle cx="{lx + 3.5}" cy="{ly - 3.5}" r="3.5" fill="{lang["color"]}"/>'
-            f'<text x="{lx + 12}" y="{ly}" fill="{t["text_secondary"]}" font-family="\'Segoe UI\',-apple-system,sans-serif" font-size="11" font-weight="600">{html.escape(lang["name"])}</text>'
-            f'<text x="{lx + 160}" y="{ly}" text-anchor="end" fill="{t["text_muted"]}" font-family="\'Consolas\',\'SFMono-Regular\',monospace" font-size="10.5">{lang["pct"]:.1f}%</text>'
+            f'<circle cx="{lx + 4}" cy="{ly - 4}" r="4" fill="{lang["color"]}"/>'
+            f'<text x="{lx + 14}" y="{ly}" fill="{t["text_secondary"]}" font-family="\'Segoe UI\',-apple-system,sans-serif" font-size="11.5" font-weight="600">{html.escape(lang["name"])}</text>'
+            f'<text x="{lx + 158}" y="{ly}" text-anchor="end" fill="{t["text_muted"]}" font-family="\'Consolas\',\'SFMono-Regular\',monospace" font-size="11">{lang["pct"]:.1f}%</text>'
         )
 
-    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 138" width="880" height="138" role="img" aria-label="GitHub telemetry strip for {html.escape(data['username'])}">
+    recent_svg: list[str] = []
+    for idx, repo in enumerate(data["recent_repos"]):
+        ry = 194 + idx * 20
+        r_name = repo["name"]
+        if len(r_name) > 22:
+            r_name = r_name[:20] + ".."
+        r_lang = repo["language"]
+        r_color = LANG_COLORS.get(r_lang, LANG_COLORS["Other"])
+        recent_svg.append(
+            f'<circle cx="500" cy="{ry - 4}" r="3.5" fill="{r_color}"/>'
+            f'<text x="510" y="{ry}" fill="{t["text_primary"]}" font-family="\'Consolas\',\'SFMono-Regular\',monospace" font-size="11.5" font-weight="600">{html.escape(r_name)}</text>'
+            f'<text x="842" y="{ry}" text-anchor="end" fill="{t["text_muted"]}" font-family="\'Consolas\',\'SFMono-Regular\',monospace" font-size="10.5">{html.escape(r_lang)} · {html.escape(repo["updated"])}</text>'
+        )
+
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 268" width="880" height="268" role="img" aria-label="GitHub telemetry for {html.escape(data['username'])}">
   <defs>
-    <clipPath id="lang-clip-{uid}">
-      <rect x="508" y="50" width="348" height="7" rx="3.5"/>
+    <linearGradient id="stats-bg-{uid}" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="{t['bg_start']}"/>
+      <stop offset="100%" stop-color="{t['bg_end']}"/>
+    </linearGradient>
+    <clipPath id="lang-bar-clip-{uid}">
+      <rect x="496" y="64" width="346" height="10" rx="5"/>
     </clipPath>
   </defs>
 
-  <rect x="1" y="1" width="878" height="136" rx="12" fill="{t['bg']}" stroke="{t['border']}" stroke-width="1"/>
+  <rect x="1" y="1" width="878" height="266" rx="16" fill="url(#stats-bg-{uid})" stroke="{t['border']}" stroke-width="1.2"/>
 
-  <!-- Left: Minimal Metrics + 51W Ribbon -->
-  <text x="24" y="32" fill="{t['accent']}" font-family="'Consolas','SFMono-Regular',monospace" font-size="10.5" font-weight="700" letter-spacing="0.8">ACTIVITY</text>
-  <text x="456" y="32" text-anchor="end" fill="{t['text_muted']}" font-family="'Consolas','SFMono-Regular',monospace" font-size="10">Updated {html.escape(data['generated_date'])} UTC</text>
+  <!-- Left Panel: Activity & Heatmap -->
+  <rect x="20" y="20" width="444" height="228" rx="12" fill="{t['card_bg']}" fill-opacity="0.72" stroke="{t['border']}" stroke-width="1"/>
+  <text x="36" y="46" fill="{t['text_primary']}" font-family="'Segoe UI',-apple-system,sans-serif" font-size="13.5" font-weight="700">GitHub Telemetry</text>
+  <text x="444" y="46" text-anchor="end" fill="{t['text_muted']}" font-family="'Consolas','SFMono-Regular',monospace" font-size="11">@{html.escape(data['username'])}</text>
 
   {''.join(kpi_svg)}
+
+  <text x="36" y="140" fill="{t['text_secondary']}" font-family="'Segoe UI',-apple-system,sans-serif" font-size="11.5" font-weight="600">Contribution Activity (Last 51 Weeks)</text>
+  <text x="444" y="140" text-anchor="end" fill="{t['text_muted']}" font-family="'Consolas','SFMono-Regular',monospace" font-size="10.5">{data['total_contribs']} total</text>
+
   <g>{''.join(heatmap_svg)}</g>
 
-  <text x="392" y="118" text-anchor="end" fill="{t['text_muted']}" font-family="'Segoe UI',-apple-system,sans-serif" font-size="9.5">Less</text>
+  <text x="36" y="229" fill="{t['text_muted']}" font-family="'Consolas','SFMono-Regular',monospace" font-size="10">Updated {html.escape(data['generated_date'])} UTC</text>
+  <text x="368" y="229" text-anchor="end" fill="{t['text_muted']}" font-family="'Segoe UI',-apple-system,sans-serif" font-size="10">Less</text>
   <g>{''.join(legend_svg)}</g>
-  <text x="433" y="118" fill="{t['text_muted']}" font-family="'Segoe UI',-apple-system,sans-serif" font-size="9.5">More</text>
+  <text x="418" y="229" fill="{t['text_muted']}" font-family="'Segoe UI',-apple-system,sans-serif" font-size="10">More</text>
 
-  <!-- Vertical Divider -->
-  <line x1="484" y1="22" x2="484" y2="116" stroke="{t['border']}" stroke-width="1"/>
+  <!-- Right Panel: Language Footprint & Recent Repos -->
+  <rect x="478" y="20" width="382" height="228" rx="12" fill="{t['card_bg']}" fill-opacity="0.72" stroke="{t['border']}" stroke-width="1"/>
+  <text x="496" y="46" fill="{t['text_primary']}" font-family="'Segoe UI',-apple-system,sans-serif" font-size="13.5" font-weight="700">Language Footprint</text>
+  <text x="842" y="46" text-anchor="end" fill="{t['text_muted']}" font-family="'Consolas','SFMono-Regular',monospace" font-size="10.5">Active originals</text>
 
-  <!-- Right: Language Footprint -->
-  <text x="508" y="32" fill="{t['accent']}" font-family="'Consolas','SFMono-Regular',monospace" font-size="10.5" font-weight="700" letter-spacing="0.8">LANGUAGES</text>
-  <text x="856" y="32" text-anchor="end" fill="{t['text_muted']}" font-family="'Consolas','SFMono-Regular',monospace" font-size="10">Active originals</text>
-
-  <rect x="508" y="50" width="348" height="7" rx="3.5" fill="{t['surface']}"/>
-  <g clip-path="url(#lang-clip-{uid})">
+  <rect x="496" y="64" width="346" height="10" rx="5" fill="{t['tile_bg']}" stroke="{t['border']}" stroke-width="0.6"/>
+  <g clip-path="url(#lang-bar-clip-{uid})">
     {''.join(bar_segments)}
   </g>
+
   <g>{''.join(lang_items_svg)}</g>
+
+  <line x1="496" y1="152" x2="842" y2="152" stroke="{t['border']}" stroke-width="1"/>
+  <text x="496" y="172" fill="{t['text_secondary']}" font-family="'Segoe UI',-apple-system,sans-serif" font-size="11.5" font-weight="700">Recently Updated Repositories</text>
+
+  <g>{''.join(recent_svg)}</g>
 </svg>
 """
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate minimalist GitHub telemetry SVGs.")
-    parser.add_argument("--snapshot", type=Path, default=None, help="Optional pre-fetched JSON file.")
+    parser = argparse.ArgumentParser(description="Generate GitHub profile SVG telemetry cards.")
+    parser.add_argument(
+        "--snapshot",
+        type=Path,
+        default=None,
+        help="Optional pre-fetched JSON data file (used offline or when rate-limited).",
+    )
     args = parser.parse_args()
 
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
@@ -381,7 +447,9 @@ def main() -> None:
     for theme in ("dark", "light"):
         out_path = ASSETS_DIR / f"stats-{theme}.svg"
         out_path.write_text(render_svg(data, theme), encoding="utf-8")
-        print(f"Generated {out_path} ({data['total_contribs']} contribs, {data['public_repos']} public repos)")
+        print(
+            f"Generated {out_path} ({data['total_contribs']} contribs, {data['public_repos']} public repos)"
+        )
 
 
 if __name__ == "__main__":
