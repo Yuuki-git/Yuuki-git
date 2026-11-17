@@ -1,0 +1,113 @@
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/banner-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="./assets/banner-light.svg" />
+    <img alt="Yuuki-git Profile Banner" src="./assets/banner-dark.svg" width="100%" />
+  </picture>
+
+  <br />
+
+  **English** · [简体中文](./README.zh-CN.md) &nbsp;|&nbsp;
+  [Repositories](https://github.com/Yuuki-git?tab=repositories) ·
+  [Selected Work](#-selected-projects) ·
+  [Tech Stack](#-tech-stack) ·
+  [Telemetry](#-github-telemetry)
+</div>
+
+---
+
+### About Me
+
+I am **Yuuki**, an M.S. student at **Zhengzhou University (ZZU)** working across **Multimodal AI Research** and **Backend / AI Systems Engineering**. I enjoy turning messy real-world problems into grounded architectures—whether that means optimizing multimodal inference kernels on heterogeneous GPUs or shipping traceable backend services and LLM agent pipelines.
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h4>Research Track · Multimodal AI</h4>
+      <ul>
+        <li><strong>Focus:</strong> Multimodal representation learning &amp; generative model inference</li>
+        <li><strong>Systems &amp; Kernels:</strong> Custom operator fusion and AOT compilation (<code>NineToothed</code>, <code>Triton/HIP</code>, <code>InfiniCore</code>, <code>InfiniLM</code>)</li>
+        <li><strong>Practice:</strong> Multi-GPU video generation deployment &amp; numerical/latency benchmarking on Hygon accelerators</li>
+      </ul>
+    </td>
+    <td width="50%" valign="top">
+      <h4>Engineering Track · Backend &amp; AI Infra</h4>
+      <ul>
+        <li><strong>Backend Stack:</strong> Production-oriented services in <code>Java</code> (<code>Spring Boot 3</code>, <code>WebFlux</code>, <code>Spring AI</code>) and <code>Python</code> (<code>FastAPI</code>, <code>LangGraph</code>)</li>
+        <li><strong>AI Engineering:</strong> Hybrid RAG (<code>BM25 + Vector + RRF</code>), stateful agent orchestration, and resilient SSE streaming</li>
+        <li><strong>Data &amp; Infra:</strong> <code>PostgreSQL</code>, <code>Redis</code>, <code>OpenSearch</code>, <code>Chroma</code>, and containerized workflows</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+---
+
+### Selected Projects
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h4><a href="https://github.com/Yuuki-git/Smart-Knowledge-Hub">Smart-Knowledge-Hub</a></h4>
+      <sub>Enterprise Hybrid-RAG Code &amp; Architecture Assistant</sub>
+      <p>
+        A traceable RAG platform for Spring Cloud docs, Java source code, and ops logs. Combines <code>OpenSearch (BM25)</code> + <code>Chroma</code> + <code>RRF</code> fusion, AST/PDF ingestion, scope-filtered citations, Redis session memory, and reactive SSE streaming across DeepSeek, OpenAI, and Ollama.
+      </p>
+      <code>Java 17</code> · <code>Spring Boot 3.5</code> · <code>Spring AI</code> · <code>WebFlux</code> · <code>Vue 3</code>
+    </td>
+    <td width="50%" valign="top">
+      <h4><a href="https://github.com/Yuuki-git/EasyPlan">EasyPlan</a></h4>
+      <sub>Intent-Driven AI Planning Agent System</sub>
+      <p>
+        An AI planning companion grounded in behavioral design (<code>Intent Profile → Strategy Router → Planner → Validator</code>). Features three-tier roadmaps, human-in-the-loop phase progression, and resilient request-scoped SSE generation recovery.
+      </p>
+      <code>Python</code> · <code>FastAPI</code> · <code>LangGraph</code> · <code>React</code> · <code>TypeScript</code> · <code>PostgreSQL</code>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h4><a href="https://github.com/Yuuki-git/minimax-h3-8gpu">minimax-h3-8gpu</a> &amp; <a href="https://github.com/Yuuki-git/songshan3">songshan3</a></h4>
+      <sub>Multimodal Video Gen &amp; Kernel Optimization</sub>
+      <p>
+        8-GPU Hygon (<code>gfx936</code>) optimization and operator benchmarks (<code>2D/3D RMSNorm</code>, <code>3D AdaLN + Gated Residual</code>) for MiniMax-H3 FL2VA using the <a href="https://github.com/Yuuki-git/ninetoothed-ss5">NineToothed</a> AOT compiler chain integrated with <code>InfiniCore</code> / <code>InfiniLM</code>.
+      </p>
+      <code>Python</code> · <code>C++</code> · <code>NineToothed</code> · <code>HIP / Triton</code> · <code>Shell</code>
+    </td>
+    <td width="50%" valign="top">
+      <h4><a href="https://github.com/Yuuki-git/ninetoothed-ss5">ninetoothed-ss5</a> &amp; <a href="https://github.com/Yuuki-git/InfiniCore/tree/minimax-h3-8gpu-opt">InfiniCore</a> / <a href="https://github.com/Yuuki-git/InfiniLM/tree/minimax-h3-8gpu-opt">InfiniLM</a></h4>
+      <sub>Compiler Toolchain &amp; Inference Engine Integration</sub>
+      <p>
+        <strong>ninetoothed-ss5:</strong> Patched NineToothed 0.26.0 toolchain supporting <code>gfx936</code> AOT HIP compilation and workspace caching.<br/>
+        <strong>InfiniCore / InfiniLM:</strong> Custom attention and AdaLN kernel integration on the <code>minimax-h3-8gpu-opt</code> branch.
+      </p>
+      <code>Python</code> · <code>C++</code> · <code>Triton / HIP</code> · <code>InfiniTensor</code>
+    </td>
+  </tr>
+</table>
+
+---
+
+### Tech Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Languages** | ![Python](https://img.shields.io/badge/Python-3572A5?style=flat-square&logo=python&logoColor=white) ![Java](https://img.shields.io/badge/Java-ED8B00?style=flat-square&logo=openjdk&logoColor=white) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) ![C++](https://img.shields.io/badge/C%2B%2B-00599C?style=flat-square&logo=cplusplus&logoColor=white) ![SQL](https://img.shields.io/badge/SQL-4479A1?style=flat-square&logo=postgresql&logoColor=white) |
+| **Backend & Systems** | ![Spring Boot](https://img.shields.io/badge/Spring_Boot_3-6DB33F?style=flat-square&logo=springboot&logoColor=white) ![WebFlux](https://img.shields.io/badge/WebFlux-6DB33F?style=flat-square&logo=spring&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) |
+| **Multimodal & Agents** | ![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=flat-square&logo=pytorch&logoColor=white) ![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?style=flat-square) ![Spring AI](https://img.shields.io/badge/Spring_AI-6DB33F?style=flat-square&logo=spring&logoColor=white) ![OpenSearch](https://img.shields.io/badge/OpenSearch-005EB8?style=flat-square&logo=opensearch&logoColor=white) ![Chroma](https://img.shields.io/badge/Chroma_DB-FF6F00?style=flat-square) ![HuggingFace](https://img.shields.io/badge/Hugging_Face-FFD21E?style=flat-square&logo=huggingface&logoColor=black) |
+| **Frontend & Tooling** | ![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black) ![Vue.js](https://img.shields.io/badge/Vue_3-4FC08D?style=flat-square&logo=vuedotjs&logoColor=white) ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black) ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white) |
+
+---
+
+### GitHub Telemetry
+
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/stats-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="./assets/stats-light.svg" />
+    <img alt="Yuuki-git GitHub Telemetry" src="./assets/stats-dark.svg" width="100%" />
+  </picture>
+</div>
+
+<div align="center">
+  <sub>Auto-refreshed daily via <a href="./.github/workflows/update-profile.yml">GitHub Actions</a> · Zhengzhou University (ZZU)</sub>
+</div>
